@@ -1,36 +1,42 @@
 "use strict";
 
-const fieldWidth = 400,
-    fieldHeight = 390,
-    enemyWidth = 100,
-    enemySpeed = 200,
-    enemyImg = 'images/enemy-bug.png';
+const mainConfig = {
+    fieldWidth: 405,
+    enemyWidth: 100,
+    enemyImg: 'images/enemy-bug.png',
+    heightLinesOfEnemies: {
+        1: 226,
+        2: 144,
+        3: 62
+    },
+    minSpeedOfEnemy: 50,
+    maxSpeedOfEnemy: 300,
+    getRandomArbitrary(min, max) {
+        return Math.random() * (max - min) + min;
+    }
+}
 
-const Enemy = function(x, y) {
+const Enemy = function(x, y, mainConfig) {
     this.x = x;
     this.y = y;
-    this.sprite = enemyImg;
-    this.speed = enemySpeed;
-    this.enemyWidth = enemyWidth;
-    this.fieldWidth = fieldWidth;
-
+    this.sprite = mainConfig.enemyImg;
+    this.speed = mainConfig.getRandomArbitrary(mainConfig.minSpeedOfEnemy, mainConfig.maxSpeedOfEnemy);
+    this.enemyWidth = mainConfig.enemyWidth;
+    this.fieldWidth = mainConfig.fieldWidth;
 };
 
-// Update the enemy's position, required method for game
-// Parameter: dt, a time delta between ticks
 Enemy.prototype.update = function(dt) {
     this.x += this.speed * dt;
-    console.log('this.x', this.x);
 
-    console.log('fieldWidth', fieldWidth + enemyWidth);
-
-    if (this.x > fieldWidth + enemyWidth) {
-        console.log('if fieldWidth', fieldWidth);
-        this.x = -enemyWidth;
+    if (this.x > this.fieldWidth + this.enemyWidth) {
+        this.x = -this.enemyWidth;
     }
 };
 
-// Draw the enemy on the screen, required method for game
+Enemy.prototype.render = function() {
+    ctx.drawImage(Resources.get(this.sprite), this.x, this.y);
+};
+
 Enemy.prototype.render = function() {
     ctx.drawImage(Resources.get(this.sprite), this.x, this.y);
 };
@@ -44,25 +50,39 @@ Enemy.prototype.render = function() {
 // Place all enemy objects in an array called allEnemies
 // Place the player object in a variable called player
 
-const heightLinesOfObstacles = {
-    1: 62,
-    2: 144,
-    3: 226
-};
-
 const allEnemies = [];
 
-const createEnemies = function(n, row) {
-    const rowNumber = heightLinesOfObstacles[row];
+const startPositionOfEnemies = function(i, n, mainConfig) {
+    const enemyWidth = mainConfig.enemyWidth,
+        fieldWidth = mainConfig.fieldWidth,
+        getRandomArbitrary = mainConfig.getRandomArbitrary;
 
-    for (let i = 0; i < n; i++) {
-        allEnemies.push(new Enemy(0, rowNumber));
+    if (i === 1) {
+            return getRandomArbitrary(-enemyWidth, enemyWidth*2);
+    } else if ( i === 2 && n === 2 ) {
+        return getRandomArbitrary(-fieldWidth, -enemyWidth);
+    } else if ( i === 2) {
+        return getRandomArbitrary((-fieldWidth + enemyWidth )/2, -enemyWidth); 
+    } else if ( i === 3) {
+        return getRandomArbitrary((-fieldWidth + enemyWidth )/2, -enemyWidth);
+    } else {
+        return 0;
     }
 }
 
-createEnemies(1, 1);
-createEnemies(2, 2);
-createEnemies(3, 3);
+const createEnemies = function(n, row, mainConfig) {
+    const heightOfLine = mainConfig.heightLinesOfEnemies[row];
+
+    for (let i = 1; i <= n; i++) {
+        const startPositionX = startPositionOfEnemies(i, n, mainConfig);
+
+        allEnemies.push(new Enemy(startPositionX, heightOfLine, mainConfig));
+    }
+}
+
+createEnemies(1, 1, mainConfig);
+createEnemies(2, 2, mainConfig);
+createEnemies(2, 3, mainConfig);
 
 // This listens for key presses and sends the keys to your
 // Player.handleInput() method. You don't need to modify this.
