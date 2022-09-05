@@ -1,8 +1,11 @@
 "use strict";
 
 const mainConfig = {
-    fieldWidth: 405,
-    enemyWidth: 100,
+    fieldWidth: 404,
+    fieldHeight: 404,
+    cellWidth: 101,
+    rowHeight: 83,
+    playerImg: 'images/char-boy.png',
     enemyImg: 'images/enemy-bug.png',
     heightLinesOfEnemies: {
         1: 226,
@@ -21,15 +24,15 @@ const Enemy = function(x, y, mainConfig) {
     this.y = y;
     this.sprite = mainConfig.enemyImg;
     this.speed = mainConfig.getRandomArbitrary(mainConfig.minSpeedOfEnemy, mainConfig.maxSpeedOfEnemy);
-    this.enemyWidth = mainConfig.enemyWidth;
+    this.cellWidth = mainConfig.cellWidth;
     this.fieldWidth = mainConfig.fieldWidth;
 };
 
 Enemy.prototype.update = function(dt) {
     this.x += this.speed * dt;
 
-    if (this.x > this.fieldWidth + this.enemyWidth) {
-        this.x = -this.enemyWidth;
+    if (this.x > this.fieldWidth + this.cellWidth) {
+        this.x = -this.cellWidth;
     }
 };
 
@@ -37,9 +40,49 @@ Enemy.prototype.render = function() {
     ctx.drawImage(Resources.get(this.sprite), this.x, this.y);
 };
 
-Enemy.prototype.render = function() {
-    ctx.drawImage(Resources.get(this.sprite), this.x, this.y);
-};
+const Player = function(mainConfig) {
+    this.x = mainConfig.fieldWidth / 2;
+    this.y = mainConfig.fieldHeight;
+    this.sprite = mainConfig.playerImg;
+    this.fieldWidth = mainConfig.fieldWidth;
+    this.fieldHeight = mainConfig.fieldHeight;
+    this.cellWidth = mainConfig.cellWidth;
+    this.rowHeight = mainConfig.rowHeight;
+    this.render = function() {
+        ctx.drawImage(Resources.get(this.sprite), this.x, this.y);
+    };
+    this.update = function() {
+        this.checkExitFromField();
+    };
+    this.handleInput = function(key) {
+        switch(key) {
+            case "left":
+                this.x += -this.cellWidth; 
+                break;
+            case "up":
+                this.y += -this.rowHeight; 
+                break;
+            case "right":
+                this.x += this.cellWidth; 
+                break;
+            case "down":
+                this.y += this.rowHeight;
+                break;
+        }
+    };
+    this.checkExitFromField = function() {
+        if (this.x < 0) {
+            this.x = 0
+        } else if (this.x > this.fieldWidth) {
+            this.x = this.fieldWidth;
+        } else if (this.y < -11) {
+            this.y = -11;
+        } else if (this.y > this.fieldHeight) {
+            this.y = this.fieldHeight;
+        }
+    }
+
+}
 
 // Now write your own player class
 // This class requires an update(), render() and
@@ -53,18 +96,18 @@ Enemy.prototype.render = function() {
 const allEnemies = [];
 
 const startPositionOfEnemies = function(i, n, mainConfig) {
-    const enemyWidth = mainConfig.enemyWidth,
+    const cellWidth = mainConfig.cellWidth,
         fieldWidth = mainConfig.fieldWidth,
         getRandomArbitrary = mainConfig.getRandomArbitrary;
 
     if (i === 1) {
-            return getRandomArbitrary(-enemyWidth, enemyWidth*2);
+            return getRandomArbitrary(-cellWidth, cellWidth*2);
     } else if ( i === 2 && n === 2 ) {
-        return getRandomArbitrary(-fieldWidth, -enemyWidth);
+        return getRandomArbitrary(-fieldWidth, -cellWidth);
     } else if ( i === 2) {
-        return getRandomArbitrary((-fieldWidth + enemyWidth )/2, -enemyWidth); 
+        return getRandomArbitrary((-fieldWidth + cellWidth )/2, -cellWidth); 
     } else if ( i === 3) {
-        return getRandomArbitrary((-fieldWidth + enemyWidth )/2, -enemyWidth);
+        return getRandomArbitrary((-fieldWidth + cellWidth )/2, -cellWidth);
     } else {
         return 0;
     }
@@ -83,6 +126,8 @@ const createEnemies = function(n, row, mainConfig) {
 createEnemies(1, 1, mainConfig);
 createEnemies(2, 2, mainConfig);
 createEnemies(2, 3, mainConfig);
+
+const player = new Player(mainConfig);
 
 // This listens for key presses and sends the keys to your
 // Player.handleInput() method. You don't need to modify this.
