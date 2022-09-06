@@ -1,53 +1,53 @@
 "use strict";
 
-const mainConfig = {
-    fieldWidth: 404,
-    fieldHeight: 404,
-    cellWidth: 101,
-    rowHeight: 83,
-    playerImg: 'images/char-boy.png',
-    enemyImg: 'images/enemy-bug.png',
-    heightLinesOfEnemies: {
-        1: 226,
-        2: 144,
+const fieldWidth = 404,
+    fieldHeight = 404,
+    cellWidth = 101,
+    rowHeight = 83,
+    playerImg = 'images/char-boy.png',
+    enemyImg = 'images/enemy-bug.png',
+    heightLinesOfEnemies = {
+        1: 228,
+        2: 145,
         3: 62
     },
-    minSpeedOfEnemy: 50,
-    maxSpeedOfEnemy: 300,
-    getRandomArbitrary(min, max) {
+    minSpeedOfEnemy = 50,
+    maxSpeedOfEnemy = 300,
+    getRandomArbitrary = function(min, max) {
         return Math.random() * (max - min) + min;
     }
-}
 
-const Enemy = function(x, y, mainConfig) {
+const Enemy = function(x, y) {
     this.x = x;
     this.y = y;
-    this.sprite = mainConfig.enemyImg;
-    this.speed = mainConfig.getRandomArbitrary(mainConfig.minSpeedOfEnemy, mainConfig.maxSpeedOfEnemy);
-    this.cellWidth = mainConfig.cellWidth;
-    this.fieldWidth = mainConfig.fieldWidth;
+    this.sprite = enemyImg;
+    this.speed = getRandomArbitrary(minSpeedOfEnemy, maxSpeedOfEnemy);
 };
 
 Enemy.prototype.update = function(dt) {
     this.x += this.speed * dt;
 
-    if (this.x > this.fieldWidth + this.cellWidth) {
-        this.x = -this.cellWidth;
+    if (this.x > fieldWidth + cellWidth) {
+        this.x = -cellWidth;
     }
+
+    this.checkCollision();
 };
 
 Enemy.prototype.render = function() {
     ctx.drawImage(Resources.get(this.sprite), this.x, this.y);
 };
 
-const Player = function(mainConfig) {
-    this.x = mainConfig.fieldWidth / 2;
-    this.y = mainConfig.fieldHeight;
-    this.sprite = mainConfig.playerImg;
-    this.fieldWidth = mainConfig.fieldWidth;
-    this.fieldHeight = mainConfig.fieldHeight;
-    this.cellWidth = mainConfig.cellWidth;
-    this.rowHeight = mainConfig.rowHeight;
+Enemy.prototype.checkCollision = function() {
+    if(player.y - 10 == this.y && player.x <= Math.floor(this.x) + cellWidth / 1.5 && player.x >= Math.floor(this.x) - cellWidth / 1.5 ) {
+        console.log('collisionСheck', this.x, this.y);
+    }
+}
+
+const Player = function() {
+    this.x = fieldWidth / 2;
+    this.y = fieldHeight;
+    this.sprite = playerImg;
     this.render = function() {
         ctx.drawImage(Resources.get(this.sprite), this.x, this.y);
     };
@@ -57,49 +57,35 @@ const Player = function(mainConfig) {
     this.handleInput = function(key) {
         switch(key) {
             case "left":
-                this.x += -this.cellWidth; 
+                this.x += -cellWidth; 
                 break;
             case "up":
-                this.y += -this.rowHeight; 
+                this.y += -rowHeight; 
                 break;
             case "right":
-                this.x += this.cellWidth; 
+                this.x += cellWidth; 
                 break;
             case "down":
-                this.y += this.rowHeight;
+                this.y += rowHeight;
                 break;
         }
     };
     this.checkExitFromField = function() {
         if (this.x < 0) {
             this.x = 0
-        } else if (this.x > this.fieldWidth) {
-            this.x = this.fieldWidth;
+        } else if (this.x > fieldWidth) {
+            this.x = fieldWidth;
         } else if (this.y < -11) {
             this.y = -11;
-        } else if (this.y > this.fieldHeight) {
-            this.y = this.fieldHeight;
+        } else if (this.y > fieldHeight) {
+            this.y = fieldHeight;
         }
     }
-
 }
-
-// Now write your own player class
-// This class requires an update(), render() and
-// a handleInput() method.
-
-
-// Now instantiate your objects.
-// Place all enemy objects in an array called allEnemies
-// Place the player object in a variable called player
 
 const allEnemies = [];
 
-const startPositionOfEnemies = function(i, n, mainConfig) {
-    const cellWidth = mainConfig.cellWidth,
-        fieldWidth = mainConfig.fieldWidth,
-        getRandomArbitrary = mainConfig.getRandomArbitrary;
-
+const startPositionOfEnemies = function(i, n ) {
     if (i === 1) {
             return getRandomArbitrary(-cellWidth, cellWidth*2);
     } else if ( i === 2 && n === 2 ) {
@@ -113,24 +99,22 @@ const startPositionOfEnemies = function(i, n, mainConfig) {
     }
 }
 
-const createEnemies = function(n, row, mainConfig) {
-    const heightOfLine = mainConfig.heightLinesOfEnemies[row];
+const createEnemies = function(n, row) {
+    const heightOfLine = heightLinesOfEnemies[row];
 
     for (let i = 1; i <= n; i++) {
-        const startPositionX = startPositionOfEnemies(i, n, mainConfig);
+        const startPositionX = startPositionOfEnemies(i, n);
 
-        allEnemies.push(new Enemy(startPositionX, heightOfLine, mainConfig));
+        allEnemies.push(new Enemy(startPositionX, heightOfLine));
     }
 }
 
-createEnemies(1, 1, mainConfig);
-createEnemies(2, 2, mainConfig);
-createEnemies(2, 3, mainConfig);
+createEnemies(1, 1);
+createEnemies(2, 2);
+createEnemies(2, 3);
 
-const player = new Player(mainConfig);
+const player = new Player();
 
-// This listens for key presses and sends the keys to your
-// Player.handleInput() method. You don't need to modify this.
 document.addEventListener('keyup', function(e) {
     var allowedKeys = {
         37: 'left',
