@@ -66,6 +66,8 @@ const Character = function (imgUrl) {
 
 const Enemy = function (x, y, speed, config, endOfGame) {
   Character.call(this, config.ENEMIES_CONF.img);
+  this.config = config;
+  this.STATE = config.STATE;
   this.ENEMIES_CONF = config.ENEMIES_CONF;
   this.FIELD_WIDTH = config.FIELD_WIDTH;
   this.BLOCK_WIDTH = config.BLOCK_WIDTH;
@@ -75,7 +77,6 @@ const Enemy = function (x, y, speed, config, endOfGame) {
   this.y = y;
   this.speed = speed;
   this.endOfGame = endOfGame;
-  this.STATE = config.STATE;
 };
 
 Enemy.prototype = Object.create(Character.prototype);
@@ -85,15 +86,11 @@ Enemy.prototype.render = function () {
 };
 
 Enemy.prototype.update = function (dt) {
-  if (!isFreeze) {
-    this.x += this.speed * dt;
-
-    if (this.x > this.FIELD_WIDTH) {
-      this.x = -this.BLOCK_WIDTH;
-    }
-
-    this.checkCollision();
-  }
+  !isFreeze
+    ? ((this.x += this.speed * dt),
+      this.x > this.FIELD_WIDTH && (this.x = -this.BLOCK_WIDTH),
+      this.checkCollision())
+    : this.updateSpeed();
 };
 
 Enemy.prototype.checkCollision = function () {
@@ -108,11 +105,19 @@ Enemy.prototype.checkCollision = function () {
 };
 
 Enemy.prototype.updateSpeed = function () {
-  this.speed = Math.random() * (this.config.STATE - min) + min;
+  const currentMinSpeedOfEnemy =
+    this.ENEMIES_CONF.minSpeedOfEnemy * this.STATE.speedMultiplicator;
+  const currentMaxSpeedOfEnemy =
+    this.ENEMIES_CONF.maxSpeedOfEnemy * this.STATE.speedMultiplicator;
+  this.speed =
+    Math.random() * (currentMaxSpeedOfEnemy - currentMinSpeedOfEnemy) +
+    currentMinSpeedOfEnemy;
 };
 
 const Player = function (config, endOfGame) {
   Character.call(this, config.PLAYER_CONF.img);
+  this.config = config;
+  this.STATE = config.STATE;
   this.PLAYER_CONF = config.PLAYER_CONF;
   this.FIELD_WIDTH = config.FIELD_WIDTH;
   this.BLOCK_WIDTH = config.BLOCK_WIDTH;
@@ -185,44 +190,59 @@ Player.prototype.goToStart = function () {
 
 const EndOfGame = function (config) {
   this.config = config;
-  this.POPUP_MESSAGE_ACTIVE_CLASS = config.POPUP_MESSAGE_ACTIVE_CLASS;
-  this.ELEMENT_POPUP_MESSAGE = config.ELEMENT_POPUP_MESSAGE;
-  this.ELEMENT_INFO_LEVEL = config.ELEMENT_INFO_LEVEL;
-  this.END_OF_GAME_WIN = config.END_OF_GAME_WIN;
-  this.ELEMENT_INFO_SPEED = config.ELEMENT_INFO_SPEED;
-  this.END_OF_GAME_LOSE = config.END_OF_GAME_LOSE;
-  this.PRINT_MESSAGE_WIN = config.PRINT_MESSAGE_WIN;
-  this.PRINT_MESSAGE_LOSE = config.PRINT_MESSAGE_LOSE;
-  this.ENEMIES_CONF = config.ENEMIES_CONF;
   this.STATE = config.STATE;
 };
 
+EndOfGame.prototype.incrementLevel = function () {
+  this.config.STATE.currentLevel++;
+  this.STATE.speedMultiplicator = +(
+    this.STATE.speedMultiplicator + this.config.ENEMIES_CONF.speedIncrease
+  ).toFixed(1);
+};
+
+EndOfGame.prototype.resetLevel = function () {
+  this.STATE.currentLevel = 1;
+  this.STATE.speedMultiplicator = 1;
+};
+
 EndOfGame.prototype.updateMarkupInfo = function (popupText) {
-  this.ELEMENT_POPUP_MESSAGE.innerText = popupText;
-  this.ELEMENT_INFO_LEVEL.innerText = this.STATE.currentLevel;
-  this.ELEMENT_INFO_SPEED.innerText = `x${this.STATE.speedMultiplicator}`;
-  this.ELEMENT_POPUP_MESSAGE.classList.add(this.POPUP_MESSAGE_ACTIVE_CLASS);
+  this.config.ELEMENT_POPUP_MESSAGE.innerText = popupText;
+  this.config.ELEMENT_INFO_LEVEL.innerText = this.STATE.currentLevel;
+  this.config.ELEMENT_INFO_SPEED.innerText = `x${this.STATE.speedMultiplicator}`;
+};
+
+EndOfGame.prototype.showPopup = function () {
+  console.log("showPopup");
+  this.config.ELEMENT_POPUP_MESSAGE.classList.add(
+    this.config.POPUP_MESSAGE_ACTIVE_CLASS
+  );
+};
+
+EndOfGame.prototype.hidePopup = function () {
+  console.log("hidePopup");
+  this.config.ELEMENT_POPUP_MESSAGE.classList.remove(
+    this.config.POPUP_MESSAGE_ACTIVE_CLASS
+  );
 };
 
 EndOfGame.prototype.updateGame = function (result) {
   isFreeze = true;
-  if (result === this.END_OF_GAME_WIN) {
-    config.STATE.currentLevel++;
-    this.STATE.speedMultiplicator = +(
-      this.STATE.speedMultiplicator + this.ENEMIES_CONF.speedIncrease
-    ).toFixed(1);
-    this.updateMarkupInfo(this.PRINT_MESSAGE_WIN);
-  } else if (result === this.END_OF_GAME_LOSE) {
-    this.STATE.currentLevel = 1;
-    this.STATE.speedMultiplicator = 1;
-    this.updateMarkupInfo(this.PRINT_MESSAGE_LOSE);
+
+  switch (result) {
+    case this.config.END_OF_GAME_WIN:
+      this.incrementLevel();
+      this.updateMarkupInfo(this.config.PRINT_MESSAGE_WIN);
+      this.showPopup();
+      break;
+    case this.config.END_OF_GAME_LOSE:
+      this.resetLevel();
+      this.updateMarkupInfo(this.config.PRINT_MESSAGE_LOSE);
+      this.showPopup();
+      break;
   }
 
   setTimeout(() => {
-    this.ELEMENT_POPUP_MESSAGE.classList.remove(
-      this.POPUP_MESSAGE_ACTIVE_CLASS
-    );
-    // updateEnemies(thconfig);
+    this.hidePopup();
     player.goToStart();
     isFreeze = false;
   }, 900);
