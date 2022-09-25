@@ -333,11 +333,6 @@ const createEnemies = (config, endOfGame) => {
   });
 };
 
-const updateEnemies = (config) => {
-  allEnemies.length = 0;
-  createEnemies(config);
-};
-
 const endOfGame = new EndOfGame(config);
 const player = new Player(config, endOfGame);
 createEnemies(config, endOfGame);
