@@ -14,7 +14,6 @@ const initialInterfaceMarkup = () => {
 initialInterfaceMarkup();
 
 const allEnemies = [];
-let isFreeze = false;
 
 const config = {
   BLOCK_WIDTH: 101,
@@ -62,6 +61,15 @@ const config = {
 
 const Character = function (imgUrl) {
   this.sprite = imgUrl;
+  this.isFreeze = false;
+};
+
+Character.prototype.setFreeze = function () {
+  this.isFreeze = true;
+};
+
+Character.prototype.unFreeze = function () {
+  this.isFreeze = false;
 };
 
 const Enemy = function (x, y, speed, config, endOfGame) {
@@ -86,11 +94,10 @@ Enemy.prototype.render = function () {
 };
 
 Enemy.prototype.update = function (dt) {
-  !isFreeze
-    ? ((this.x += this.speed * dt),
-      this.x > this.FIELD_WIDTH && (this.x = -this.BLOCK_WIDTH),
-      this.checkCollision())
-    : this.updateSpeed();
+  !this.isFreeze &&
+    ((this.x += this.speed * dt),
+    this.x > this.FIELD_WIDTH && (this.x = -this.BLOCK_WIDTH),
+    this.checkCollision());
 };
 
 Enemy.prototype.checkCollision = function () {
@@ -146,7 +153,7 @@ Player.prototype.update = function () {
 };
 
 Player.prototype.handleInput = function (key) {
-  if (!isFreeze) {
+  if (!this.isFreeze) {
     switch (key) {
       case "left":
         this.x += -this.BLOCK_WIDTH;
@@ -212,21 +219,33 @@ EndOfGame.prototype.updateMarkupInfo = function (popupText) {
 };
 
 EndOfGame.prototype.showPopup = function () {
-  console.log("showPopup");
   this.config.ELEMENT_POPUP_MESSAGE.classList.add(
     this.config.POPUP_MESSAGE_ACTIVE_CLASS
   );
 };
 
 EndOfGame.prototype.hidePopup = function () {
-  console.log("hidePopup");
   this.config.ELEMENT_POPUP_MESSAGE.classList.remove(
     this.config.POPUP_MESSAGE_ACTIVE_CLASS
   );
 };
 
+EndOfGame.prototype.setFreezeCharacters = function () {
+  player.setFreeze();
+  allEnemies.forEach((enemy) => enemy.setFreeze());
+};
+
+EndOfGame.prototype.unFreezeCharacters = function () {
+  player.unFreeze();
+  allEnemies.forEach((enemy) => enemy.unFreeze());
+};
+
+EndOfGame.prototype.updateSpeedOfEnemies = function () {
+  allEnemies.forEach((enemy) => enemy.updateSpeed());
+};
+
 EndOfGame.prototype.updateGame = function (result) {
-  isFreeze = true;
+  this.setFreezeCharacters();
 
   switch (result) {
     case this.config.END_OF_GAME_WIN:
@@ -241,10 +260,15 @@ EndOfGame.prototype.updateGame = function (result) {
       break;
   }
 
+  this.restartGame();
+};
+
+EndOfGame.prototype.restartGame = function () {
   setTimeout(() => {
-    this.hidePopup();
+    this.updateSpeedOfEnemies();
     player.goToStart();
-    isFreeze = false;
+    this.hidePopup();
+    this.unFreezeCharacters();
   }, 900);
 };
 
